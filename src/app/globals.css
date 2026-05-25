@@ -211,11 +211,15 @@
   color: var(--c-subtle); padding: 12px 18px 6px;
 }
 .cesa-nav__b {
-  display: flex; flex-direction: column; align-items: flex-start;
+  display: flex; flex-direction: row; align-items: center; flex-wrap: wrap;
+  gap: 0 8px;
   width: 100%; background: transparent; border: 0; border-left: 2px solid transparent;
-  color: var(--c-text); padding: 6px 18px; text-align: left; cursor: pointer;
-  font: inherit; font-size: inherit;
+  color: var(--c-text); padding: 6px 14px; text-align: left; cursor: pointer;
+  font: inherit; font-size: inherit; text-decoration: none;
 }
+.cesa-nav__b svg { flex-shrink: 0; opacity: 0.55; }
+.cesa-nav__lbl { flex: 1 1 auto; min-width: 0; }
+.cesa-nav__hint { flex: 0 0 100%; padding-left: 21px; }
 .cesa-nav__b:hover { background: var(--c-overlay); }
 .cesa-nav__b.is-active { background: var(--c-surface2); border-left-color: var(--c-text); color: var(--c-textStrong); }
 .cesa-nav__lbl { font-size: 12.5px; font-weight: 500; }
@@ -233,11 +237,32 @@
 }
 .cesa-sidebar__toggle:hover { background: var(--c-overlay); color: var(--c-text); }
 
+/* ── Icon-only nav (collapsed) ── */
+.cesa-nav--icons {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 0; gap: 0; flex: 1; overflow-y: auto;
+}
+.cesa-nav__icon-group { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; padding: 0 8px; }
+.cesa-nav__icon-group--sep { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--c-border); }
+.cesa-nav__icon-b {
+  display: grid; place-items: center;
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm); border: 0;
+  color: var(--c-muted); background: transparent;
+  text-decoration: none; transition: background 0.12s, color 0.12s;
+}
+.cesa-nav__icon-b:hover { background: var(--c-overlay); color: var(--c-text); }
+.cesa-nav__icon-b.is-active {
+  background: var(--c-surface2); color: var(--c-textStrong);
+  box-shadow: inset 2px 0 0 var(--c-text);
+}
+
 /* ── Collapsed sidebar ── */
 .cesa-app:has(.cesa-sidebar[data-collapsed]) { grid-template-columns: 52px 1fr; }
 .cesa-sidebar[data-collapsed] { width: 52px; }
 .cesa-sidebar[data-collapsed] .cesa-sidebar__brand {
-  flex-direction: column; padding: 10px 0; gap: 8px; align-items: center; justify-content: center;
+  flex-direction: column; padding: 12px 0 10px; gap: 8px;
+  align-items: center; justify-content: center;
 }
 .cesa-userchip { display: flex; align-items: center; gap: 10px; }
 .cesa-userchip__avatar {

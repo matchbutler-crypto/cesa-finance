@@ -3,27 +3,33 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import {
+  LayoutDashboard, TrendingUp, Telescope,
+  Package, RefreshCw, FileText,
+  Bot, Calculator,
+  Target, CalendarDays, BarChart2, BookOpen,
+} from 'lucide-react'
 
 const NAV = [
   { section: 'Übersicht', items: [
-    { id: 'dashboard',  label: 'Dashboard',     hint: 'Net Worth · Check-in', href: '/dashboard' },
-    { id: 'cashflow',   label: 'Cashflow',       hint: 'Timeline · Engpässe', href: '/cashflow' },
-    { id: 'forecast',   label: 'Forecast',       hint: 'Szenarien · Crystal Ball', href: '/forecast' },
+    { id: 'dashboard',  label: 'Dashboard',     hint: 'Net Worth · Check-in',     href: '/dashboard', Icon: LayoutDashboard },
+    { id: 'cashflow',   label: 'Cashflow',       hint: 'Timeline · Engpässe',       href: '/cashflow',  Icon: TrendingUp },
+    { id: 'forecast',   label: 'Forecast',       hint: 'Szenarien · Crystal Ball',  href: '/forecast',  Icon: Telescope },
   ]},
   { section: 'Operations', items: [
-    { id: 'products',   label: 'Produkte',       hint: 'Profitabilität · Marge', href: '/products' },
-    { id: 'restocking', label: 'Restocking',     hint: 'Bestand · Reorder', href: '/restocking' },
-    { id: 'documents',  label: 'Documents',      hint: 'Gmail · Belege', href: '/documents' },
+    { id: 'products',   label: 'Produkte',       hint: 'Profitabilität · Marge',    href: '/products',   Icon: Package },
+    { id: 'restocking', label: 'Restocking',     hint: 'Bestand · Reorder',         href: '/restocking', Icon: RefreshCw },
+    { id: 'documents',  label: 'Documents',      hint: 'Gmail · Belege',            href: '/documents',  Icon: FileText },
   ]},
   { section: 'Agenten', items: [
-    { id: 'cfo',        label: 'CFO',            hint: 'Finanz-Agent', href: '/cfo' },
-    { id: 'tax',        label: 'Steuerberater',  hint: 'Steuer-Agent', href: '/tax' },
+    { id: 'cfo',        label: 'CFO',            hint: 'Finanz-Agent',              href: '/cfo',        Icon: Bot },
+    { id: 'tax',        label: 'Steuerberater',  hint: 'Steuer-Agent',              href: '/tax',        Icon: Calculator },
   ]},
   { section: 'Planung', items: [
-    { id: 'goals',      label: 'Ziele',          hint: 'Goals · Waypoints', href: '/goals' },
-    { id: 'seasons',    label: 'Saisonkalender', hint: 'BFCM · Weihnachten', href: '/seasons' },
-    { id: 'planning',   label: 'Jahresplanung',  hint: 'Soll-Ist · Quartale', href: '/planning' },
-    { id: 'reports',    label: 'Reports',        hint: 'Investor · P&L', href: '/reports' },
+    { id: 'goals',      label: 'Ziele',          hint: 'Goals · Waypoints',         href: '/goals',     Icon: Target },
+    { id: 'seasons',    label: 'Saisonkalender', hint: 'BFCM · Weihnachten',        href: '/seasons',   Icon: CalendarDays },
+    { id: 'planning',   label: 'Jahresplanung',  hint: 'Soll-Ist · Quartale',       href: '/planning',  Icon: BarChart2 },
+    { id: 'reports',    label: 'Reports',        hint: 'Investor · P&L',            href: '/reports',   Icon: BookOpen },
   ]},
 ]
 
@@ -65,12 +71,32 @@ export function Sidebar() {
                       href={item.href}
                       className={`cesa-nav__b ${pathname === item.href ? 'is-active' : ''}`}
                     >
+                      <item.Icon size={13} style={{ flexShrink: 0, opacity: 0.6 }} />
                       <span className="cesa-nav__lbl">{item.label}</span>
                       <span className="cesa-nav__hint">{item.hint}</span>
                     </Link>
                   </li>
                 ))}
               </ul>
+            </div>
+          ))}
+        </nav>
+      )}
+
+      {collapsed && (
+        <nav className="cesa-nav cesa-nav--icons">
+          {NAV.map((section, si) => (
+            <div key={section.section} className={`cesa-nav__icon-group${si > 0 ? ' cesa-nav__icon-group--sep' : ''}`}>
+              {section.items.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={`cesa-nav__icon-b ${pathname === item.href ? 'is-active' : ''}`}
+                  title={item.label}
+                >
+                  <item.Icon size={16} />
+                </Link>
+              ))}
             </div>
           ))}
         </nav>
