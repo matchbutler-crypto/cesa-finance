@@ -222,6 +222,23 @@
 .cesa-nav__hint { font-size: 10.5px; color: var(--c-muted); }
 
 .cesa-sidebar__foot { border-top: 1px solid var(--c-border); padding: 10px 14px; }
+
+/* ── Sidebar toggle button ── */
+.cesa-sidebar__toggle {
+  background: transparent; border: 1px solid var(--c-border); border-radius: var(--r-sm);
+  color: var(--c-muted); cursor: pointer; font-family: var(--font-mono); font-size: 14px;
+  width: 22px; height: 22px; display: grid; place-items: center;
+  flex-shrink: 0; padding: 0; line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+.cesa-sidebar__toggle:hover { background: var(--c-overlay); color: var(--c-text); }
+
+/* ── Collapsed sidebar ── */
+.cesa-app:has(.cesa-sidebar[data-collapsed]) { grid-template-columns: 52px 1fr; }
+.cesa-sidebar[data-collapsed] { width: 52px; }
+.cesa-sidebar[data-collapsed] .cesa-sidebar__brand {
+  flex-direction: column; padding: 10px 0; gap: 8px; align-items: center; justify-content: center;
+}
 .cesa-userchip { display: flex; align-items: center; gap: 10px; }
 .cesa-userchip__avatar {
   width: 24px; height: 24px; background: var(--c-surface3); color: var(--c-text);

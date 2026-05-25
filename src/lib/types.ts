@@ -103,9 +103,16 @@ export interface Document {
   subject: string
 }
 
+export interface Cashflow {
+  startBalance: number
+  entries: CashflowEntry[]
+  today: number
+}
+
 export interface CesaData {
   netWorth: NetWorth
   forecast: Forecast
   ads: Ads
   products: Product[]
+  cashflow: Cashflow
 }

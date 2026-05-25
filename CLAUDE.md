@@ -1,73 +1,83 @@
-# AI Coding Starter Kit
+# CLAUDE.md
 
-> A Next.js template with an AI-powered development workflow using specialized skills for Requirements, Architecture, Frontend, Backend, QA, and Deployment.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Tech Stack
+## Project
 
-- **Framework:** Next.js 16 (App Router), TypeScript
-- **Styling:** Tailwind CSS + shadcn/ui (copy-paste components)
-- **Backend:** Supabase (PostgreSQL + Auth + Storage) - optional
-- **Deployment:** Vercel
-- **Validation:** Zod + react-hook-form
-- **State:** React useState / Context API
+**CESA Financial OS** — a personal finance operating system for an e-commerce owner (CESA Clothing, `cesaclothing.myshopify.com`). Combines store intelligence, cashflow forecasting, document management, and two AI agents (CFO + tax advisor). The core UX promise: 30 seconds daily to know if you're on track.
 
-## Project Structure
-
-```
-src/
-  app/              Pages (Next.js App Router)
-  components/
-    ui/             shadcn/ui components (NEVER recreate these)
-  hooks/            Custom React hooks
-  lib/              Utilities (supabase.ts, utils.ts)
-features/           Feature specifications (PROJ-X-name.md)
-  INDEX.md          Feature status overview
-docs/
-  PRD.md            Product Requirements Document
-  production/       Production guides (Sentry, security, performance)
-```
-
-## Development Workflow
-
-1. `/init` - Initialize the project: PRD + feature map (run once at the start)
-2. `/write-spec` - Create a full feature spec for one feature
-3. `/architecture` - Design tech architecture (PM-friendly, no code)
-4. `/frontend` - Build UI components (shadcn/ui first!)
-5. `/backend` - Build APIs, database, RLS policies
-6. `/qa` - Test against acceptance criteria + security audit
-7. `/deploy` - Deploy to Vercel + production-ready checks
-
-Use `/refine PROJ-X` at any point to revisit and improve an existing feature spec.
-
-## Feature Tracking
-
-All features tracked in `features/INDEX.md`. Every skill reads it at start and updates it when done. Feature specs live in `features/PROJ-X-name.md`.
-
-## Key Conventions
-
-- **Feature IDs:** PROJ-1, PROJ-2, etc. (sequential)
-- **Commits:** `feat(PROJ-X): description`, `fix(PROJ-X): description`
-- **Single Responsibility:** One feature per spec file
-- **shadcn/ui first:** NEVER create custom versions of installed shadcn components
-- **Human-in-the-loop:** All workflows have user approval checkpoints
-- **Tests:** Unit tests co-located next to source files (`useHook.test.ts` next to `useHook.ts`). E2E tests in `tests/`.
-
-## Build & Test Commands
+## Commands
 
 ```bash
-npm run dev          # Development server (localhost:3000)
+npm run dev          # Dev server at localhost:3000
 npm run build        # Production build
 npm run lint         # ESLint
-npm run start        # Production server
-npm test             # Vitest unit/integration tests
-npm run test:e2e     # Playwright E2E tests
-npm run test:all     # Both test suites
+npm test             # Vitest unit/integration (jsdom)
+npm run test:watch   # Vitest in watch mode
+npx vitest run src/path/to/file.test.ts  # Single test file
+npm run test:e2e     # Playwright E2E
+npm run test:all     # Both suites
 ```
 
-## Product Context
+## Architecture
 
-@docs/PRD.md
+### Stack
+- **Next.js 15** App Router, TypeScript, React 19
+- **Styling:** Tailwind CSS + CSS Custom Properties for the CESA design system (4 themes, 3 density modes)
+- **Charts:** Recharts (LineChart, BarChart, AreaChart) — not yet installed; add when building chart screens
+- **UI components:** shadcn/ui (pre-installed in `src/components/ui/`) — always use these before creating custom components
+- **Backend:** Supabase (PostgreSQL + Auth) — client in `src/lib/supabase.ts`, currently returns `null` placeholder until activated
+- **AI agents:** Claude API (`claude-sonnet-4-5`), `max_tokens: 1024`
+- **Fonts:** Geist Sans + Geist Mono via `next/font/google`
 
-## Feature Overview
+### Design System
+The CESA design system lives entirely in CSS Custom Properties — **not** Tailwind utilities. The 4 themes (Linear dark, Bloomberg, Mercury light, Pipe light/warm) are applied by swapping `--c-*` token values on `:root`. Density (compact/regular/comfy) is controlled via `data-density` on `<html>`.
 
-@features/INDEX.md
+The canonical token and component reference is `source/src/styles.css` and `source/src/ui.jsx`. When building screens, transfer tokens from `source/src/styles.css` into `src/app/globals.css` — do not invent new CSS variables.
+
+### Prototype Reference (`source/`)
+The `source/` directory contains high-fidelity HTML prototypes — the single source of truth for layouts, component specs, data structures, and business logic formulas. Before building any screen:
+1. Read the corresponding section of `README.md` for layout and component specs
+2. Read `source/src/data.js` for the exact data shapes
+3. Read the relevant `source/src/screens-*.jsx` for interaction logic
+
+Prototypes use React via Babel in-browser (no build chain). All data is hardcoded in `source/src/data.js`. In the live app, data comes from external APIs.
+
+### 12 Screens → Routes
+| Route | Screen | Source file |
+|---|---|---|
+| `/dashboard` | Net Worth + Daily Check-in | `screens-core.jsx` |
+| `/cashflow` | Cashflow Timeline | `screens-core.jsx` |
+| `/forecast` | Forecast & Scenarios | `screens-core.jsx` |
+| `/products` | Product Profitability | `screens-ops.jsx` |
+| `/restocking` | Restocking Intelligence | `screens-ops.jsx` |
+| `/documents` | Document Inbox (Gmail + upload) | `screens-ops.jsx` |
+| `/cfo` | CFO Chat Agent | `screens-meta.jsx` |
+| `/tax` | Tax Advisor Chat Agent | `screens-meta.jsx` |
+| `/goals` | Goals & Waypoints | `screens-meta.jsx` |
+| `/seasons` | Season Calendar | `screens-plan.jsx` |
+| `/planning` | Annual Planning (Gantt) | `screens-plan.jsx` |
+| `/reports` | Investor Reports (P&L, Bilanz) | `screens-plan.jsx` |
+
+Navigation has two layouts: `sidebar` (248px fixed) and `topnav` — switchable at runtime via theme toggle.
+
+### Data Flow
+**Phase 1 (current):** Hardcoded mock data from `source/src/data.js` shapes — import as TypeScript constants.
+
+**Phase 2 (API integration):**
+- Shopify orders/products/inventory → `GET https://n8n.srv1240318.hstgr.cloud/shopify-proxy`
+- Meta Ads ROAS/spend → `GET https://n8n.srv1240318.hstgr.cloud/meta-proxy`
+- Documents/receipts → Gmail MCP Bridge + manual upload
+- Financial records → lexoffice API
+- Persistence → Supabase (PostgreSQL)
+
+All external credentials go in `.env.local`. Required vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SHOPIFY_TOKEN`, `META_TOKEN`, `LEXOFFICE_TOKEN`, `ANTHROPIC_API_KEY`. See `.env.local.example`.
+
+### AI Agent Pattern (CFO + Tax screens)
+Both chat screens inject a system prompt with live store context, then stream Claude API responses. The prototype in `source/src/screens-meta.jsx` shows the exact system prompt template and message history structure to replicate.
+
+### Feature Workflow
+Features are tracked in `features/INDEX.md`. Use the project skills in order:
+`/write-spec` → `/architecture` → `/frontend` → `/backend` → `/qa` → `/deploy`
+
+Each skill reads `features/INDEX.md` at start and updates status when done. Never write code for a feature without a spec in `features/`.
