@@ -42,7 +42,13 @@ export function Sidebar() {
       {/* Brand header */}
       <div className="cesa-sidebar__brand">
         {collapsed ? (
-          <div className="cesa-brand__mark" style={{ margin: '0 auto' }}>C</div>
+          <button
+            onClick={() => setCollapsed(false)}
+            title="Seitenleiste öffnen"
+            style={{ display: 'block', background: 'none', border: 'none', padding: 0, margin: '0 auto', cursor: 'pointer' }}
+          >
+            <div className="cesa-brand__mark">C</div>
+          </button>
         ) : (
           <>
             <div className="cesa-brand">
@@ -101,9 +107,9 @@ export function Sidebar() {
                   key={item.id}
                   href={item.href}
                   className={`cesa-nav__icon-b ${pathname === item.href ? 'is-active' : ''}`}
-                  title={item.label}
+                  data-label={item.label}
                 >
-                  <item.Icon size={16} />
+                  <item.Icon size={15} strokeWidth={1.6} />
                 </Link>
               ))}
             </div>
@@ -115,13 +121,6 @@ export function Sidebar() {
       {collapsed ? (
         <div className="cesa-sidebar__foot--collapsed">
           <div className="cesa-userchip__avatar" title="Easy · Owner">E</div>
-          <button
-            className="cesa-sidebar__toggle"
-            onClick={() => setCollapsed(false)}
-            title="Seitenleiste öffnen"
-          >
-            ›
-          </button>
         </div>
       ) : (
         <div className="cesa-sidebar__foot">
