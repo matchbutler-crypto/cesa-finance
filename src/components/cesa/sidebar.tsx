@@ -39,26 +39,31 @@ export function Sidebar() {
 
   return (
     <aside className="cesa-sidebar" data-collapsed={collapsed ? '' : undefined}>
+      {/* Brand header */}
       <div className="cesa-sidebar__brand">
-        {!collapsed && (
-          <div className="cesa-brand">
-            <div className="cesa-brand__mark">C</div>
-            <div>
-              <div className="cesa-brand__name">CESA Financial OS</div>
-              <div className="cesa-brand__sub cesa-muted">cesaclothing.myshopify.com</div>
+        {collapsed ? (
+          <div className="cesa-brand__mark" style={{ margin: '0 auto' }}>C</div>
+        ) : (
+          <>
+            <div className="cesa-brand">
+              <div className="cesa-brand__mark">C</div>
+              <div>
+                <div className="cesa-brand__name">CESA Financial OS</div>
+                <div className="cesa-brand__sub cesa-muted">cesaclothing.myshopify.com</div>
+              </div>
             </div>
-          </div>
+            <button
+              className="cesa-sidebar__toggle"
+              onClick={() => setCollapsed(true)}
+              title="Seitenleiste schließen"
+            >
+              ‹
+            </button>
+          </>
         )}
-        {collapsed && <div className="cesa-brand__mark">C</div>}
-        <button
-          className="cesa-sidebar__toggle"
-          onClick={() => setCollapsed(c => !c)}
-          title={collapsed ? 'Seitenleiste öffnen' : 'Seitenleiste schließen'}
-        >
-          {collapsed ? '›' : '‹'}
-        </button>
       </div>
 
+      {/* Expanded nav */}
       {!collapsed && (
         <nav className="cesa-nav">
           {NAV.map((section) => (
@@ -83,10 +88,14 @@ export function Sidebar() {
         </nav>
       )}
 
+      {/* Collapsed icon nav */}
       {collapsed && (
         <nav className="cesa-nav cesa-nav--icons">
           {NAV.map((section, si) => (
-            <div key={section.section} className={`cesa-nav__icon-group${si > 0 ? ' cesa-nav__icon-group--sep' : ''}`}>
+            <div
+              key={section.section}
+              className={`cesa-nav__icon-group${si > 0 ? ' cesa-nav__icon-group--sep' : ''}`}
+            >
               {section.items.map((item) => (
                 <Link
                   key={item.id}
@@ -102,7 +111,19 @@ export function Sidebar() {
         </nav>
       )}
 
-      {!collapsed && (
+      {/* Footer */}
+      {collapsed ? (
+        <div className="cesa-sidebar__foot--collapsed">
+          <div className="cesa-userchip__avatar" title="Easy · Owner">E</div>
+          <button
+            className="cesa-sidebar__toggle"
+            onClick={() => setCollapsed(false)}
+            title="Seitenleiste öffnen"
+          >
+            ›
+          </button>
+        </div>
+      ) : (
         <div className="cesa-sidebar__foot">
           <div className="cesa-userchip">
             <div className="cesa-userchip__avatar">E</div>
