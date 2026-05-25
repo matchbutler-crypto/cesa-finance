@@ -1,6 +1,6 @@
 import { MOCK_DATA } from '@/lib/mock-data'
 import { Panel, Tag, Sparkline } from '@/components/cesa/primitives'
-import { fmtEur, fmtPct } from '@/lib/formatters'
+import { fmtEur, fmtPct, fmtDate } from '@/lib/formatters'
 import { NetWorthHero } from './_components/NetWorthHero'
 import { KpiCard } from './_components/KpiCard'
 import { DailyCheckin } from './_components/DailyCheckin'
@@ -15,13 +15,17 @@ export default function DashboardPage() {
   const savingsBalance = nw.accounts.find(a => a.kind === 'savings')?.balance ?? 0
   const bankBalance    = nw.accounts[0].balance
   const top3 = [...products].sort((a, b) => b.profit - a.profit).slice(0, 3)
+  const now = new Date()
+  const day = now.getDate()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const monthName = now.toLocaleDateString('de-DE', { month: 'long' })
 
   return (
     <div>
       {/* Page header */}
       <div className="cesa-pagehead">
         <div>
-          <div className="cesa-pagehead__eyebrow">Mai 2026 · Tag 25/31</div>
+          <div className="cesa-pagehead__eyebrow">{monthName} {now.getFullYear()} · Tag {day}/{daysInMonth}</div>
           <h1 className="cesa-pagehead__title">Dashboard</h1>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -66,7 +70,7 @@ export default function DashboardPage() {
                   <td><span className="cesa-pill cesa-pill--liab">VBL</span></td>
                   <td>{l.name}</td>
                   <td className="r cesa-tbl__num cesa-mono">{fmtEur(-l.amount)}</td>
-                  <td className="r cesa-tbl__num cesa-muted">fällig {l.due}</td>
+                  <td className="r cesa-tbl__num cesa-muted">fällig {fmtDate(l.due)}</td>
                 </tr>
               ))}
               <tr className="cesa-tbl__sum cesa-tbl__sum--strong">
@@ -104,7 +108,7 @@ export default function DashboardPage() {
           label="Ad ROAS heute"
           value={`${ads.roas.toFixed(2)}x`}
           delta={`Break-even ${ads.breakEvenRoas}x`}
-          deltaKind="pos"
+          deltaKind={ads.roas >= ads.breakEvenRoas ? 'pos' : 'neg'}
           sub="Skalieren empfohlen"
           status="pos"
         />

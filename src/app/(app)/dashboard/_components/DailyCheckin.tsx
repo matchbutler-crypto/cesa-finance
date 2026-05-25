@@ -5,7 +5,9 @@ import type { NetWorth, Ads } from '@/lib/types'
 interface Props { netWorth: NetWorth; ads: Ads }
 
 export function DailyCheckin({ netWorth, ads }: Props) {
-  const cashBalance = netWorth.accounts[0].balance + netWorth.accounts[1].balance
+  const bankAccount = netWorth.accounts.find(a => a.kind === 'bank' && a.name === 'Geschäftskonto')
+  const storeAccount = netWorth.accounts.find(a => a.kind === 'store')
+  const cashBalance = (bankAccount?.balance ?? 0) + (storeAccount?.balance ?? 0)
   const items = [
     { lbl: 'Orders gestern',  val: '4',                                        sub: '€204 GMV',           ok: true  },
     { lbl: 'Ad ROAS gestern', val: `${ads.roasYesterday.toFixed(2)}x`,          sub: `Break-even ${ads.breakEvenRoas}x`, ok: true  },

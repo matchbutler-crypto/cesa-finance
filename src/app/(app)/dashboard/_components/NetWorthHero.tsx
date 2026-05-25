@@ -30,7 +30,7 @@ export function NetWorthHero({ netWorth: nw }: Props) {
             </div>
             <div className="cesa-kv">
               <span>Monatliches Wachstum</span>
-              <b className="cesa-mono">{fmtEur(Math.round((nw.forecast12m[11] - nw.total) / 12))}</b>
+              <b className="cesa-mono">{fmtEur(Math.round((nw.forecast12m[nw.forecast12m.length - 1] - nw.total) / 12))}</b>
             </div>
             <div className="cesa-kv">
               <span>Ziel Ø Wachstum</span>
