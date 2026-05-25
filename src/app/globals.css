@@ -146,6 +146,9 @@
   --c-overlay: rgba(0,0,0,0.025); --c-grid: rgba(0,0,0,0.05);
 }
 
+/* linear = default CESA dark theme (same as :root) */
+[data-theme="linear"] { }
+
 [data-density="compact"] {
   --gap-x: 10px; --gap-y: 10px; --pad: 10px; --pad-sm: 8px;
   --row-h: 28px; --fs-base: 12px; --fs-sm: 10.5px; --fs-xs: 10px; --fs-h1: 20px;
