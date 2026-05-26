@@ -269,4 +269,14 @@ Alle Acceptance Criteria bestanden. Keine kritischen Bugs. Die gefundenen Bugs (
 **Empfehlung:** Vor Deployment auf öffentlichen Server → BUG-001 priorisiert beheben.
 
 ## Deployment
-_To be added by /deploy_
+
+**Deployed:** 2026-05-27
+**Umgebung:** Lokal (localhost:3000) — persönliches Single-User-Tool
+**GitHub:** https://github.com/matchbutler-crypto/cesa-finance (branch: main, commit: 315b5ce)
+
+**Voraussetzungen für den Betrieb:**
+1. `ANTHROPIC_API_KEY` in `.env.local` eintragen
+2. Migration `supabase/migrations/003_api_cost_tracker.sql` im Supabase SQL-Editor ausführen
+3. `npm run dev` starten
+
+**Vercel (optional, später):** Alle Env Vars aus `.env.local` im Vercel Dashboard eintragen, dann `npx vercel --prod`.
