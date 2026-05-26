@@ -15,7 +15,9 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
+| PROJ-1 | Ausgaben-Tracker (Budget Planner) | In Progress | — | 2026-05-26 |
+| PROJ-2 | Claude API Cost Tracker (Sidebar Widget) | Approved | [PROJ-2](PROJ-2-claude-api-cost-tracker.md) | 2026-05-26 |
 
 <!-- Add features above this line -->
 
-## Next Available ID: PROJ-1
+## Next Available ID: PROJ-3

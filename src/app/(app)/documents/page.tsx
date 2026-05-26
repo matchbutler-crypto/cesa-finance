@@ -1,8 +1,9 @@
 import { Panel, Tag, StatusDot } from '@/components/cesa/primitives'
 import { fmtEur, fmtDate } from '@/lib/formatters'
+import { fetchGmailDocuments, isGmailConfigured, type GmailDocument } from '@/lib/api/gmail'
 
 interface Doc {
-  id: number
+  id: number | string
   source: 'gmail' | 'upload'
   vendor: string
   subject: string
@@ -11,6 +12,47 @@ interface Doc {
   category: string
   categoryColor: string
   status: 'auto' | 'pending' | 'confirmed'
+}
+
+// Heuristic: extract sender name from "Name <email>" format
+function parseSender(from: string): string {
+  const match = from.match(/^"?([^"<]+)"?\s*</)
+  return match ? match[1].trim() : from.split('@')[0]
+}
+
+// Guess category from subject/sender
+function guessCategory(subject: string, from: string): { category: string; color: string } {
+  const s = (subject + ' ' + from).toLowerCase()
+  if (s.includes('meta') || s.includes('facebook') || s.includes('ads'))
+    return { category: 'Marketing', color: 'var(--c-warning)' }
+  if (s.includes('shopify'))
+    return { category: 'Abo', color: 'var(--c-accent)' }
+  if (s.includes('amazon') || s.includes('lieferung') || s.includes('bestellung') || s.includes('order'))
+    return { category: 'Wareneinkauf', color: 'var(--c-positive)' }
+  if (s.includes('steuer') || s.includes('finanzamt') || s.includes('tax'))
+    return { category: 'Steuer', color: 'var(--c-danger)' }
+  if (s.includes('paypal') || s.includes('stripe') || s.includes('gebühr') || s.includes('fee'))
+    return { category: 'Gebühren', color: 'var(--c-muted)' }
+  if (s.includes('hosting') || s.includes('server') || s.includes('cloud') || s.includes('n8n'))
+    return { category: 'Abo', color: 'var(--c-accent)' }
+  if (s.includes('versand') || s.includes('dhl') || s.includes('hermes') || s.includes('shipping'))
+    return { category: 'Versand', color: '#8B5CF6' }
+  return { category: 'Sonstiges', color: 'var(--c-muted)' }
+}
+
+function gmailToDoc(m: GmailDocument, _index: number): Doc {
+  const { category, color } = guessCategory(m.subject, m.from)
+  return {
+    id: m.id,
+    source: 'gmail',
+    vendor: parseSender(m.from),
+    subject: m.subject,
+    amount: m.amount,
+    date: m.date.slice(0, 10),
+    category,
+    categoryColor: color,
+    status: m.amount > 0 ? 'auto' : 'pending',
+  }
 }
 
 const DOCS: Doc[] = [
@@ -32,8 +74,17 @@ const STATUS_LABEL: Record<string, string> = { auto: 'Auto', pending: 'Prüfen',
 const STATUS_TAG: Record<string, 'neutral' | 'warn' | 'pos'> = { auto: 'neutral', pending: 'warn', confirmed: 'pos' }
 const STATUS_DOT: Record<string, 'info' | 'warning' | 'pos'> = { auto: 'info', pending: 'warning', confirmed: 'pos' }
 
-export default function DocumentsPage() {
-  const docs = [...DOCS].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+export default async function DocumentsPage() {
+  // Fetch real Gmail documents if configured, otherwise fall back to mock
+  let gmailDocs: Doc[] = []
+  const gmailActive = isGmailConfigured()
+  if (gmailActive) {
+    const emails = await fetchGmailDocuments(50).catch(() => [])
+    gmailDocs = emails.map((m, i) => gmailToDoc(m, i))
+  }
+
+  const baseDocs: Doc[] = gmailActive ? gmailDocs : DOCS
+  const docs = [...baseDocs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   const totalAmount  = docs.reduce((s, d) => s + d.amount, 0)
   const autoCount    = docs.filter(d => d.status === 'auto').length
@@ -55,12 +106,18 @@ export default function DocumentsPage() {
       {/* Page header */}
       <div className="cesa-pagehead">
         <div>
-          <div className="cesa-pagehead__eyebrow">Mai 2026 · Gmail + Upload · {docs.length} Dokumente</div>
+          <div className="cesa-pagehead__eyebrow">
+            {gmailActive ? 'Live · Gmail' : 'Mock-Daten'} · {docs.length} Dokumente
+          </div>
           <h1 className="cesa-pagehead__title">Document Inbox</h1>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {gmailActive && (
+            <span className="cesa-pill" style={{ background: 'var(--c-pos-bg)', color: 'var(--c-pos)', fontSize: 10 }}>
+              Live · Gmail
+            </span>
+          )}
           {pendingCount > 0 && <Tag kind="warn" dot>{pendingCount} ausstehend</Tag>}
-          <button className="cesa-btn cesa-btn--ghost">Gmail Sync</button>
           <button className="cesa-btn cesa-btn--ghost">Upload</button>
           <button className="cesa-btn cesa-btn--ghost">DATEV Export</button>
         </div>

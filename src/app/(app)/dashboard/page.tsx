@@ -5,20 +5,49 @@ import { NetWorthHero } from './_components/NetWorthHero'
 import { KpiCard } from './_components/KpiCard'
 import { DailyCheckin } from './_components/DailyCheckin'
 import { AlertList } from './_components/AlertList'
+import { fetchShopifyDashboard } from '@/lib/api/shopify'
+import { fetchMetaDashboard } from '@/lib/api/meta'
 
 const ACCOUNT_ABBREV: Record<string, string> = {
   bank: 'BNK', store: 'SHP', paypal: 'PP', savings: 'TG', real: 'IMO',
 }
 
-export default function DashboardPage() {
-  const { netWorth: nw, forecast, ads, products } = MOCK_DATA
+const MONTHLY_TARGET = 20000 // EUR — anpassen wenn Ziele-System live ist
+
+export default async function DashboardPage() {
+  const { netWorth: nw, products } = MOCK_DATA
   const savingsBalance = nw.accounts.find(a => a.kind === 'savings')?.balance ?? 0
   const bankBalance    = nw.accounts[0].balance
   const top3 = [...products].sort((a, b) => b.profit - a.profit).slice(0, 3)
+
   const now = new Date()
   const day = now.getDate()
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
   const monthName = now.toLocaleDateString('de-DE', { month: 'long' })
+
+  // Fetch live data, fall back silently on error
+  const [shopify, meta] = await Promise.all([
+    fetchShopifyDashboard().catch(() => null),
+    fetchMetaDashboard().catch(() => null),
+  ])
+
+  // Build forecast from real Shopify data (or mock fallback)
+  const mtdRevenue        = shopify?.mtdRevenue        ?? MOCK_DATA.forecast.mtdRevenue
+  const lastMonthRevenue  = shopify?.lastMonthRevenue  ?? MOCK_DATA.forecast.lastMonth
+  const dailyRevenue      = shopify?.dailyRevenue      ?? MOCK_DATA.forecast.daily
+  const daysElapsed       = shopify ? day : MOCK_DATA.forecast.daysElapsed
+  const dailyRunRate      = daysElapsed > 0 ? mtdRevenue / daysElapsed : 0
+  const projectedMonthEnd = dailyRunRate * daysInMonth
+  const daysToTarget      = dailyRunRate > 0 ? Math.max(0, (MONTHLY_TARGET - mtdRevenue) / dailyRunRate) : 0
+  const vsLastMonth       = lastMonthRevenue > 0 ? (mtdRevenue / lastMonthRevenue - 1) * 100 : 0
+
+  // Build ads from real Meta data (or mock fallback)
+  const ads = meta ?? MOCK_DATA.ads
+
+  const liveAds = {
+    ...MOCK_DATA.ads,
+    ...ads,
+  }
 
   return (
     <div>
@@ -28,8 +57,17 @@ export default function DashboardPage() {
           <div className="cesa-pagehead__eyebrow">{monthName} {now.getFullYear()} · Tag {day}/{daysInMonth}</div>
           <h1 className="cesa-pagehead__title">Dashboard</h1>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button className="cesa-btn cesa-btn--ghost">Waypoint setzen</button>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {shopify && (
+            <span className="cesa-pill" style={{ background: 'var(--c-pos-bg)', color: 'var(--c-pos)', fontSize: 10 }}>
+              Live · Shopify
+            </span>
+          )}
+          {meta && (
+            <span className="cesa-pill" style={{ background: 'var(--c-pos-bg)', color: 'var(--c-pos)', fontSize: 10 }}>
+              Live · Meta
+            </span>
+          )}
           <button className="cesa-btn cesa-btn--ghost">Export</button>
         </div>
       </div>
@@ -83,34 +121,34 @@ export default function DashboardPage() {
         </Panel>
 
         <Panel title="Heute" subtitle="Daily Check-in · 30 Sekunden">
-          <DailyCheckin netWorth={nw} ads={ads} />
+          <DailyCheckin netWorth={nw} ads={liveAds} />
         </Panel>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — live Shopify + Meta data */}
       <div className="cesa-grid cesa-grid--4" style={{ marginBottom: 'var(--gap-y)' }}>
         <KpiCard
           label="Umsatz MTD"
-          value={fmtEur(forecast.mtdRevenue)}
-          delta={fmtPct((forecast.mtdRevenue / forecast.lastMonth - 1) * 100, { sign: true })}
-          deltaKind="pos"
-          sub={`Ziel ${fmtEur(forecast.target)}`}
-          chart={<Sparkline data={forecast.daily} width={92} height={28} stroke="var(--c-text)" />}
+          value={fmtEur(mtdRevenue)}
+          delta={fmtPct(vsLastMonth, { sign: true })}
+          deltaKind={vsLastMonth >= 0 ? 'pos' : 'neg'}
+          sub={`Ziel ${fmtEur(MONTHLY_TARGET)}`}
+          chart={<Sparkline data={dailyRevenue} width={92} height={28} stroke="var(--c-text)" />}
         />
         <KpiCard
           label="Projektion EOM"
-          value={fmtEur(forecast.projectedMonthEnd)}
-          delta={`+${(forecast.projectedMonthEnd - forecast.target).toFixed(0)} vs. Ziel`}
-          deltaKind="pos"
-          sub={`Run rate ${fmtEur(forecast.dailyRunRate, { decimals: 0 })}/Tag`}
+          value={fmtEur(projectedMonthEnd)}
+          delta={`${projectedMonthEnd >= MONTHLY_TARGET ? '+' : ''}${(projectedMonthEnd - MONTHLY_TARGET).toFixed(0)} vs. Ziel`}
+          deltaKind={projectedMonthEnd >= MONTHLY_TARGET ? 'pos' : 'neg'}
+          sub={`Run rate ${fmtEur(dailyRunRate, { decimals: 0 })}/Tag`}
         />
         <KpiCard
           label="Ad ROAS heute"
-          value={`${ads.roas.toFixed(2)}x`}
-          delta={`Break-even ${ads.breakEvenRoas}x`}
-          deltaKind={ads.roas >= ads.breakEvenRoas ? 'pos' : 'neg'}
-          sub="Skalieren empfohlen"
-          status="pos"
+          value={liveAds.roas > 0 ? `${liveAds.roas.toFixed(2)}x` : '—'}
+          delta={`Break-even ${liveAds.breakEvenRoas}x`}
+          deltaKind={liveAds.roas >= liveAds.breakEvenRoas ? 'pos' : 'neg'}
+          sub={liveAds.roas >= liveAds.breakEvenRoas ? 'Skalieren empfohlen' : 'Unter Break-even'}
+          status={liveAds.status as 'pos' | 'neg' | undefined}
         />
         <KpiCard
           label="Cash Reserve"

@@ -39,20 +39,6 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ]
 
-const MOCK_REPLIES: Record<string, string> = {
-  default: 'Das analysiere ich gerade. Basierend auf deinen aktuellen Finanzdaten (NW €18.420, ROAS 2,85x, Cashflow stabil) sieht die Lage gut aus. Soll ich einen konkreten Plan ausarbeiten?',
-  'cashflow': 'Cashflow Mai: Startsaldo €5.210, aktuell €4.890 (-€320 durch Ads + Lieferant). Proj. Endsaldo 31.05.: **€4.622**. Kein Engpass erwartet — Minimum am 28.05.: €3.400.',
-  'roas': 'ROAS heute: **2,85x** (Break-Even: 2,50x ✓). 7-Tage-Ø: 2,42x — leicht schwächer. CPP €16.80. Empfehlung: Budget stabil halten, kein Scale-up bis 7d-ROAS > 2,60x.',
-  'ads': 'Heute €48 Ads-Budget · €137 Revenue → ROAS 2,85x. Budget-Empfehlung: bei €40–55/Tag bleiben bis 7d-ROAS konstant > 2,60x, dann schrittweise +20% testen.',
-}
-
-function getMockReply(input: string): string {
-  const lower = input.toLowerCase()
-  if (lower.includes('cashflow') || lower.includes('saldo')) return MOCK_REPLIES['cashflow']
-  if (lower.includes('roas')) return MOCK_REPLIES['roas']
-  if (lower.includes('ads') || lower.includes('werbung')) return MOCK_REPLIES['ads']
-  return MOCK_REPLIES['default']
-}
 
 function now() {
   return new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
@@ -139,23 +125,47 @@ export function CfoChat() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES)
   const [input, setInput] = useState('')
   const [thinking, setThinking] = useState(false)
+  const [, setApiError] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, thinking])
 
-  function send(text: string) {
+  async function send(text: string) {
     if (!text.trim() || thinking) return
     const userMsg: Message = { role: 'user', text: text.trim(), ts: now() }
-    setMessages(prev => [...prev, userMsg])
+    const updatedMessages = [...messages, userMsg]
+    setMessages(updatedMessages)
     setInput('')
     setThinking(true)
-    setTimeout(() => {
-      const reply: Message = { role: 'agent', text: getMockReply(text), ts: now() }
-      setMessages(prev => [...prev, reply])
+    setApiError(false)
+
+    // Build history for Claude (exclude initial agent greeting to save tokens)
+    const history = updatedMessages.slice(1, -1).map(m => ({
+      role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+      content: m.text,
+    }))
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text.trim(), history, agentType: 'cfo' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'API error')
+      setMessages(prev => [...prev, { role: 'agent', text: data.text, ts: now() }])
+    } catch {
+      setApiError(true)
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        text: 'Verbindungsfehler — bitte prüfe den ANTHROPIC_API_KEY in .env.local und versuche es erneut.',
+        ts: now(),
+      }])
+    } finally {
       setThinking(false)
-    }, 900 + Math.random() * 600)
+    }
   }
 
   return (

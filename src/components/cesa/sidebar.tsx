@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, TrendingUp, Telescope,
-  Package, RefreshCw, FileText,
+  Package, RefreshCw, FileText, Receipt,
   Bot, Calculator,
   Target, CalendarDays, BarChart2, BookOpen,
 } from 'lucide-react'
+import { ApiCostWidget } from './api-cost-widget'
 
 const NAV = [
   { section: 'Übersicht', items: [
@@ -17,6 +18,7 @@ const NAV = [
     { id: 'forecast',   label: 'Forecast',       hint: 'Szenarien · Crystal Ball',  href: '/forecast',  Icon: Telescope },
   ]},
   { section: 'Operations', items: [
+    { id: 'ausgaben',   label: 'Ausgaben',       hint: 'Budget · Tracking',         href: '/ausgaben',   Icon: Receipt },
     { id: 'products',   label: 'Produkte',       hint: 'Profitabilität · Marge',    href: '/products',   Icon: Package },
     { id: 'restocking', label: 'Restocking',     hint: 'Bestand · Reorder',         href: '/restocking', Icon: RefreshCw },
     { id: 'documents',  label: 'Documents',      hint: 'Gmail · Belege',            href: '/documents',  Icon: FileText },
@@ -116,6 +118,9 @@ export function Sidebar() {
           ))}
         </nav>
       )}
+
+      {/* API Cost Widget */}
+      <ApiCostWidget collapsed={collapsed} />
 
       {/* Footer */}
       {collapsed ? (

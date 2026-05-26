@@ -109,6 +109,38 @@ export interface Cashflow {
   today: number
 }
 
+export type ExpenseTopf =
+  | 'Arbeitsmittel'
+  | 'Fixkosten'
+  | 'Logistik'
+  | 'Marketing'
+  | 'Personal'
+  | 'Privat'
+  | 'Privat Fixkosten'
+  | 'Schulden'
+  | 'Steuer'
+
+export type ExpenseBank = 'N26' | 'SPK' | 'TRANSFERWISE' | 'PAYPAL'
+
+export interface Expense {
+  id: string
+  abgebucht: boolean
+  datum: string | null        // ISO date string
+  mit_mwst: boolean
+  brutto: number | null
+  mwst: number | null
+  topf: ExpenseTopf | null
+  zahlungstyp: string | null  // Überweisung | Lastschrift | Dauerauftrag
+  bank: ExpenseBank | null
+  kategorie: string | null
+  details: string | null
+  fix_variabel: 'Fix' | 'Variabel' | null
+  dauerauftrag: boolean
+  monat: string               // MAI, JUNI, …
+  jahr: number
+  created_at: string
+}
+
 export interface CesaData {
   netWorth: NetWorth
   forecast: Forecast

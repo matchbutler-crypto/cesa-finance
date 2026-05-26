@@ -38,18 +38,6 @@ const INITIAL_MESSAGES: Message[] = [
   },
 ]
 
-const MOCK_REPLIES: Record<string, string> = {
-  default: 'Das prüfe ich steuerrechtlich für dich. Kannst du mir mehr Kontext geben oder soll ich auf Basis deiner aktuellen Buchführung antworten?',
-  'vorsteuer': 'Vorsteuer Mai (geschätzt):\n• Meta Ads €284 × 19% = €53.96\n• Shopify €29 × 19% = €5.51\n• Wareneinkauf €699 × 19% = €132.81\n• Sonstige ~€68\n\n**Gesamte Vorsteuer Mai: ca. €260**\nDiese mindert deine USt-Zahllast.',
-  'ust': 'USt-Zahllast Mai (Schätzung):\nUmsatzsteuer aus Verkäufen (19%): ca. €710\nAbzgl. Vorsteuer: −€260\n**Voraussichtliche Zahllast: ca. €450**\nFälligkeit: 10.06.2026',
-}
-
-function getMockReply(input: string): string {
-  const lower = input.toLowerCase()
-  if (lower.includes('vorsteuer')) return MOCK_REPLIES['vorsteuer']
-  if (lower.includes('ust') || lower.includes('umsatzsteuer')) return MOCK_REPLIES['ust']
-  return MOCK_REPLIES['default']
-}
 
 function now() {
   return new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
@@ -116,15 +104,36 @@ export function TaxChat() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, thinking])
 
-  function send(text: string) {
+  async function send(text: string) {
     if (!text.trim() || thinking) return
-    setMessages(prev => [...prev, { role: 'user', text: text.trim(), ts: now() }])
+    const updatedMessages = [...messages, { role: 'user' as const, text: text.trim(), ts: now() }]
+    setMessages(updatedMessages)
     setInput('')
     setThinking(true)
-    setTimeout(() => {
-      setMessages(prev => [...prev, { role: 'agent', text: getMockReply(text), ts: now() }])
+
+    const history = updatedMessages.slice(1, -1).map(m => ({
+      role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+      content: m.text,
+    }))
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text.trim(), history, agentType: 'tax' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'API error')
+      setMessages(prev => [...prev, { role: 'agent', text: data.text, ts: now() }])
+    } catch {
+      setMessages(prev => [...prev, {
+        role: 'agent',
+        text: 'Verbindungsfehler — bitte prüfe den ANTHROPIC_API_KEY in .env.local und versuche es erneut.',
+        ts: now(),
+      }])
+    } finally {
       setThinking(false)
-    }, 900 + Math.random() * 600)
+    }
   }
 
   return (
