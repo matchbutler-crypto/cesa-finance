@@ -1,4 +1,5 @@
 import { MOCK_DATA } from '@/lib/mock-data'
+import { fetchShopifyProductData, type ShopifyProductData } from '@/lib/api/shopify'
 import { Panel, Tag, StatusDot } from '@/components/cesa/primitives'
 import { fmtEur, fmtPct, fmtNum } from '@/lib/formatters'
 import { WaterfallBar, MarginMiniBar } from './_components/MarginBar'
@@ -15,8 +16,47 @@ function marginKind(m: number): 'pos' | 'warn' | 'neg' | 'neutral' {
   return 'neg'
 }
 
-export default function ProductsPage() {
-  const products = [...MOCK_DATA.products].sort((a, b) => b.profit - a.profit)
+// Normalise ShopifyProductData into the shape the page expects
+function toPageProduct(p: ShopifyProductData) {
+  return {
+    sku: p.sku,
+    name: p.name,
+    price: p.price,
+    cogs: p.cogs,
+    ads: 0,            // Meta Ads not broken down per SKU
+    returns: 0,        // Returns aggregation skipped (complex)
+    units: p.units,
+    stock: p.stock,
+    leadTime: p.leadTime,
+    revenue: p.revenue,
+    totalCogs: p.totalCogs,
+    totalAds: 0,
+    totalReturns: 0,
+    profit: p.profit,
+    margin: p.margin,
+    daysToStockout: p.daysToStockout,
+    dailyRate: p.dailyRate,
+  }
+}
+
+export default async function ProductsPage() {
+  let products: ReturnType<typeof toPageProduct>[]
+  let isLive = false
+
+  try {
+    const shopifyProducts = await fetchShopifyProductData()
+    // Fall back to mock if Shopify returns empty (no sales yet / token missing)
+    if (shopifyProducts.length > 0) {
+      products = shopifyProducts.map(toPageProduct)
+      isLive = true
+    } else {
+      products = [...MOCK_DATA.products]
+    }
+  } catch {
+    products = [...MOCK_DATA.products]
+  }
+
+  products = [...products].sort((a, b) => b.profit - a.profit)
 
   const totalRevenue = products.reduce((s, p) => s + p.revenue, 0)
   const totalProfit  = products.reduce((s, p) => s + p.profit, 0)
@@ -34,7 +74,11 @@ export default function ProductsPage() {
       {/* Page header */}
       <div className="cesa-pagehead">
         <div>
-          <div className="cesa-pagehead__eyebrow">Mai 2026 · {products.length} SKUs · MTD</div>
+          <div className="cesa-pagehead__eyebrow">
+          {new Date().toLocaleString('de-DE', { month: 'long', year: 'numeric' })} · {products.length} SKUs · MTD
+          {isLive && <span style={{ marginLeft: 8, color: 'var(--c-positive)', fontSize: 10 }}>● Live · Shopify</span>}
+          {!isLive && <span style={{ marginLeft: 8, color: 'var(--c-muted)', fontSize: 10 }}>● Mock-Daten</span>}
+        </div>
           <h1 className="cesa-pagehead__title">Produkt-Profitabilität</h1>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>

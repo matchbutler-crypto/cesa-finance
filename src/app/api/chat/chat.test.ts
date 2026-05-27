@@ -15,6 +15,21 @@ vi.mock('@anthropic-ai/sdk', () => {
   return { default: MockAnthropic }
 })
 
+// Mock Shopify + Meta API (now called by buildSystemPrompt)
+vi.mock('@/lib/api/shopify', () => ({
+  fetchShopifyDashboard: vi.fn().mockResolvedValue({
+    mtdRevenue: 2847, lastMonthRevenue: 3120, dailyRevenue: [], todayRevenue: 113, orderCountMtd: 24,
+  }),
+  fetchShopifyProductData: vi.fn().mockResolvedValue([]),
+}))
+vi.mock('@/lib/api/meta', () => ({
+  fetchMetaDashboard: vi.fn().mockResolvedValue({
+    roas: 2.85, roasYesterday: 3.1, todaySpend: 98, todayRevenue: 279,
+    yesterdaySpend: 85, yesterdayRevenue: 263, cpm: 12, ctr: 1.8, cpp: 49,
+    spend7d: [], revenue7d: [], breakEvenRoas: 2.5, status: 'green',
+  }),
+}))
+
 // Mock Supabase
 vi.mock('@/lib/supabase', () => ({
   supabase: {
